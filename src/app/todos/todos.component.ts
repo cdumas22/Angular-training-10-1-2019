@@ -35,17 +35,17 @@ export class TodosComponent {
       }
     ],
     onCellEditingStopped: (event: CellEditingStoppedEvent) => {
-      this.todoService.update(event.data as Todo)
+      // this.todoService.update(event.data as Todo)
     }
   }
 
   constructor(private todoService: TodoService) { }
 
   public create() {
-    this.todoService.create({
-      title: 'tester',
-      dueDate: new Date(),
-      userId: 1
-    })
+    // this.todoService.create({
+    //   title: 'tester',
+    //   dueDate: new Date(),
+    //   userId: 1
+    // })
   }
 }
