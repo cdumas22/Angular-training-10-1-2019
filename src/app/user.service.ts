@@ -8,9 +8,16 @@ import { interval } from 'rxjs';
   providedIn: 'root'
 })
 export class UserService {
-  private baseUrl = 'http://fake-base-url/api'
-
-  public users = this.http.get<User[]>(`${this.baseUrl}/users`)
+  /**
+   * Users update automatically on an interval
+   */
+  public users = interval(12000).pipe(
+    startWith(0),
+    switchMap(() => this.http.get<User[]>(`/api/users`).pipe(
+      tap(() => console.log('get users')),
+    )),
+    shareReplay(1)
+  )
 
   constructor(private http: HttpClient) { }
 }

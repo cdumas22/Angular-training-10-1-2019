@@ -1,3 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
 @import "~ag-grid-community/dist/styles/ag-grid.css";
 @import "~ag-grid-community/dist/styles/ag-theme-balham.css";
+
+.delete-link {
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    background: red;
+}
