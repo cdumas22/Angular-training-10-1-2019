@@ -17,7 +17,7 @@ import { TodoService } from './todo.service';
                     [rowData]="todos | async"></ag-grid-angular>`
 })
 export class AppComponent implements OnDestroy {
-  public title = 'RXjs Railways';
+  public title = 'RxJS Railways';
   public editingTodoHasChanges = false
   private editingTodo?: Todo
   private todoUpdated = false
@@ -36,7 +36,7 @@ export class AppComponent implements OnDestroy {
         width: 70,
         cellClass: 'delete-link',
         onCellClicked: ({ data }: CellClickedEvent) => {
-          this.todoService.delete(data as Todo)
+          this.todoService.delete(data as Todo).subscribe()
         }
       },
       { field: 'id', sort: 'asc', },
@@ -50,6 +50,7 @@ export class AppComponent implements OnDestroy {
         }
       }
     ],
+    singleClickEdit: true,
     onCellEditingStarted: ({ data }: CellEditingStartedEvent) => {
       this.editingTodo = data
     },
@@ -58,7 +59,7 @@ export class AppComponent implements OnDestroy {
       // this is important to know if the cell stopped editing needs
       // to update the collection or not
       this.todoUpdated = true
-      this.todoService.update(data as Todo)
+      this.todoService.update(data as Todo).subscribe()
     },
     onCellEditingStopped: () => {
       this.editingTodo = undefined
@@ -97,7 +98,7 @@ export class AppComponent implements OnDestroy {
       title: 'tester',
       dueDate: (new Date()).toISOString(),
       userId: 1
-    })
+    }).subscribe()
   }
 
   public ngOnDestroy() {

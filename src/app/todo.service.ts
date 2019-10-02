@@ -9,7 +9,9 @@ import { UserService } from './user.service';
   providedIn: 'root'
 })
 export class TodoService {
+  // the current state of the todos
   private _todos: Todo[] = []
+  // trigger to let user know of local changes to the todos
   private todosSubject = new Subject<Todo[]>()
 
   public todos: Observable<Todo[]> = merge(
@@ -31,10 +33,10 @@ export class TodoService {
           // map users to a todo and return out our todo collection
           map(([todos, users]) => {
             console.log('merge users with todos')
-            return todos.map(todo => {
-              todo.user = users.find(user => user.id === todo.userId)
-              return todo
-            })
+            return todos.map(todo => ({
+              ...todo,
+              user: users.find(user => user.id === todo.userId)
+            }))
           }),
           // Save the current state to _todos.
           // This makes it possible for the todoSubject to send out updates
@@ -58,47 +60,48 @@ export class TodoService {
   }
 
   public create(todo: Todo) {
-    return this.sendUpdateOrCreate(
-      this.http.post<Todo>(`/api/todos`, todo)
+    console.log('creating todo')
+    return combineLatest(
+      this.http.post<Todo>(`/api/todos`, todo),
+      this.userService.users
+    ).pipe(
+      // take 1 is required because users is being triggered on an interval
+      // we only want the current snapshot then close
+      take(1),
+      map(([newTodo, users]) => ({
+        ...newTodo,
+        user: users.find(x => x.id === newTodo.userId)
+      })),
+      tap(newTodo => this._todos = [...this._todos, newTodo]),
+      tap(() => this.todosSubject.next(this._todos))
     )
   }
 
   public update(todo: Todo) {
-    return this.sendUpdateOrCreate(
+    console.log('updating todo')
+    return combineLatest(
       this.http.put<Todo>(`/api/todos`, todo),
-      todo
+      this.userService.users
+    ).pipe(
+      take(1),
+      map(([updatedTodo, users]) => ({
+        ...updatedTodo,
+        user: users.find(x => x.id === updatedTodo.userId)
+      })),
+      tap(updatedTodo => this._todos = [
+        ...this._todos.filter(x => x.id !== updatedTodo.id),
+        updatedTodo
+      ]),
+      tap(() => this.todosSubject.next(this._todos))
     )
   }
 
-  /**
-   * Delete a todo from the collection
-   */
   public delete(todo: Todo) {
+    console.log('deleting todo')
     return this.http.delete(`/api/todos/${todo.id}`).pipe(
       take(1),
       tap(() => this._todos = this._todos.filter(x => x.id !== todo.id)),
       tap(() => this.todosSubject.next(this._todos))
-    ).subscribe()
-  }
-
-  /**
-   * Handles re-assigning the user and updating the collection of todos
-   * then sending out the update
-   */
-  private sendUpdateOrCreate(httpRequest: Observable<Todo>, oldItem?: Todo) {
-    return httpRequest.pipe(
-      take(1),
-      switchMap(newTodo => this.userService.users.pipe(
-        map(users => {
-          const user = users.find(x => x.id === newTodo.userId)
-          newTodo.user = user
-          return newTodo
-        }))),
-      tap(newTodo => this._todos = [
-        ...(oldItem == null ? this._todos : this._todos.filter(x => x.id !== oldItem.id)),
-        newTodo
-      ]),
-      tap(() => this.todosSubject.next(this._todos))
-    ).subscribe()
+    )
   }
 }
